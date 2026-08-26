@@ -1,0 +1,25 @@
+name: BIST Bot Otomasyonu
+
+on:
+  schedule:
+    - cron: '30 15 * * 1-5'
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+
+      - name: Python Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Kütüphaneleri Yükle
+        run: |
+          pip install pandas yfinance numpy requests
+
+      - name: Botu Çalıştır
+        run: |
+          python bot.py
