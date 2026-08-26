@@ -20,15 +20,14 @@ def telegram_mesaj_gonder(mesaj):
         print(f"Hata: {e}")
 
 def borsa_taramasi_yap():
-    # BİST-100 ve ana hacimli hisseleri kapsayan genişletilmiş havuz
     hisseler = [
         "THYAO.IS", "TUPRS.IS", "EREGL.IS", "KCHOL.IS", "GARAN.IS", 
         "AKBNK.IS", "ISCTR.IS", "YKBNK.IS", "ASELS.IS", "BIMAS.IS",
         "SAHOL.IS", "PETKM.IS", "SASA.IS", "HEKTS.IS", "KRDMD.IS",
         "PGSUS.IS", "TOASO.IS", "FROTO.IS", "ARCLK.IS", "ENKAI.IS",
-        "MGROS.IS", "TCELL.IS", "TTKOM.IS", "SISE.IS", "BIMAS.IS",
+        "MGROS.IS", "TCELL.IS", "TTKOM.IS", "SISE.IS", 
         "ENJSA.IS", "ODAS.IS", "BERA.IS", "OYAKC.IS", "ASTOR.IS",
-        "KONTR.IS", "GESAN.IS", "ALARK.IS", "HEKTS.IS", "GUBRF.IS"
+        "KONTR.IS", "GESAN.IS", "ALARK.IS", "GUBRF.IS"
     ]
     
     print(f"🔍 Toplam {len(hisseler)} hisse filtreleniyor...")
@@ -37,15 +36,12 @@ def borsa_taramasi_yap():
     for hisse in hisseler:
         try:
             ticker = yf.Ticker(hisse)
-            veri = ticker.history(period="1y", interval="1d") # Trend için 1 yıllık veri
+            veri = ticker.history(period="1y", interval="1d")
             
             if len(veri) < 200:
                 continue
                 
-            # 1. Trend Filtresi (200 Günlük Hareketli Ortalama - Batan çöp hisseleri eler)
             veri['SMA_200'] = veri['Close'].rolling(window=200).mean()
-            
-            # 2. Bollinger ve RSI Hesaplama
             veri['SMA_20'] = veri['Close'].rolling(window=20).mean()
             veri['STD'] = veri['Close'].rolling(window=20).std()
             veri['Bollinger_Lower'] = veri['SMA_20'] - (veri['STD'] * 2.0)
@@ -62,10 +58,6 @@ def borsa_taramasi_yap():
             son_rsi = veri['RSI'].iloc[-1]
             sma_200 = veri['SMA_200'].iloc[-1]
             
-            # GELİŞMİŞ FİLTRELİ DİP KURALI:
-            # - Fiyat Bollinger alt bandına değecek
-            # - RSI aşırı satışta olacak (<38)
-            # - Fiyat 200 günlük ortalamanın üstünde olacak (Yani genel trendi yükseliş olan sağlam hisse)
             if (son_dusuk <= bollinger_alt) and (son_rsi < 38) and (son_kapanis > sma_200):
                 bulunan_fırsatlar.append(
                     f"📌 *{hisse}*\n"
@@ -77,11 +69,12 @@ def borsa_taramasi_yap():
         except Exception as e:
             pass
             
+    # SONUÇLARI BİLDİR (Artık fırsat olmasa bile Telegram'a bilgi atacak)
     if bulunan_fırsatlar:
         rapor = "🚨 *BİST AKILLI DİP FIRSATLARI RAPORU* 🚨\n\n" + "\n".join(bulunan_fırsatlar) + "\n⚠️ _Kriter: Trend üstü sağlam hisse dipte!_"
         telegram_mesaj_gonder(rapor)
     else:
-        print("🔍 Tarama bitti. Sağlam trendde olup dip yapan hisse bulunamadı.")
+        telegram_mesaj_gonder("🔍 *BİST Günlük Tarama Tamamlandı*\n\nBugün kriterlere uyan (trend üstü + dipte) fırsat bulunamadı. Piyasayı takip etmeye devam ediyoruz! ☕")
 
 if __name__ == "__main__":
     borsa_taramasi_yap()
